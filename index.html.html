@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>For You 💕</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Upright:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Pinyon+Script&family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --rose-deep:#9b2335;--rose-mid:#c8415a;--rose-light:#e8758a;--rose-pale:#f4b8c5;
+  --leaf-dark:#2d5a3d;--leaf-mid:#3d7a50;
+  --cream:#fdf4ee;--warm:#fff8f3;--gold:#c8963c;--gold-l:#e8c070;--ink:#1e1010;
+}
+
+html{height:100%;-webkit-text-size-adjust:100%;}
+body{
+  font-family:'Jost',sans-serif;
+  background:var(--cream);
+  min-height:100%;
+  min-height:-webkit-fill-available;
+  overflow:hidden;
+  position:fixed;
+  width:100%;
+  /* iOS Safari touch fix */
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* BG */
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 18% 18%,rgba(248,195,210,.45) 0%,transparent 55%),
+    radial-gradient(ellipse at 82% 82%,rgba(232,192,210,.35) 0%,transparent 55%),
+    linear-gradient(160deg,#fdf4ee 0%,#fdeef4 50%,#f8eef8 100%);
+}
+
+/* FALLING PETALS */
+.petal-layer{position:fixed;inset:0;pointer-events:none;z-index:1;}
+.fp{position:absolute;border-radius:80% 20% 80% 20%;opacity:0;animation:floatDown linear infinite;}
+@keyframes floatDown{
+  0%  {transform:translateY(-60px) rotate(0deg);opacity:0;}
+  10% {opacity:.7;}
+  90% {opacity:.35;}
+  100%{transform:translateY(105vh) rotate(380deg);opacity:0;}
+}
+
+/* ── PAGE SYSTEM ──
+   Key iOS fix: use visibility instead of pointer-events alone,
+   and don't use display:none (causes layout recalc bugs on Safari).
+   We show/hide with opacity + visibility toggled via JS class.
+*/
+.page{
+  position:fixed;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  padding:env(safe-area-inset-top,20px) 16px env(safe-area-inset-bottom,20px);
+  transition:opacity .7s ease, visibility .7s ease;
+}
+.page.hidden{
+  opacity:0;
+  visibility:hidden; /* iOS Safari respects this better than pointer-events */
+}
+
+/* ── PAGE 1 ── */
+.q-card{
+  position:relative;
+  /* No backdrop-filter — causes iOS touch blocking bugs */
+  background:rgba(255,251,249,.96);
+  border:1px solid rgba(200,150,160,.3);
+  border-radius:24px;
+  padding:48px 36px 42px;
+  text-align:center;
+  max-width:420px;width:92%;
+  box-shadow:0 20px 60px rgba(155,35,53,.14),0 4px 16px rgba(155,35,53,.08);
+  animation:cardRise .9s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes cardRise{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+
+.flower-icon{font-size:3.4rem;display:block;margin-bottom:16px;animation:bloom 4s ease-in-out infinite;}
+@keyframes bloom{0%,100%{transform:scale(1) rotate(-3deg)}50%{transform:scale(1.1) rotate(3deg)}}
+
+.q-title{
+  font-family:'Cormorant Upright',serif;
+  font-size:1.75rem;font-style:italic;font-weight:300;
+  color:var(--ink);line-height:1.45;margin-bottom:32px;
+}
+.q-title span{color:var(--rose-mid);font-weight:600;}
+
+.btns{display:flex;gap:14px;justify-content:center;}
+
+/* Big tap targets for iOS */
+.btn{
+  font-family:'Cormorant Upright',serif;
+  font-size:1.15rem;font-weight:600;letter-spacing:.06em;
+  padding:16px 40px;
+  border-radius:60px;border:none;
+  cursor:pointer;
+  /* iOS button fix */
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  transition:transform .15s,box-shadow .15s;
+}
+.btn:active{transform:scale(.95)!important;}
+.btn-yes{
+  background:linear-gradient(135deg,#c8415a,#9b2335);
+  color:#fff;
+  box-shadow:0 8px 24px rgba(155,35,53,.4);
+}
+.btn-no{
+  background:#fff;color:var(--rose-mid);
+  border:1.5px solid var(--rose-pale);
+  box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+.wrong-msg{
+  margin-top:20px;
+  font-family:'Cormorant Upright',serif;
+  font-style:italic;font-size:1rem;
+  color:var(--rose-mid);
+  min-height:24px;
+  opacity:0;transition:opacity .4s;
+}
+.wrong-msg.show{opacity:1;}
+
+/* ── PAGE 2 ── */
+#page2{justify-content:center;gap:0;}
+
+.p2-title{
+  font-family:'Pinyon Script',cursive;
+  font-size:clamp(1.6rem,6vw,2.2rem);
+  color:var(--rose-deep);
+  text-align:center;
+  margin-bottom:6px;
+  padding:0 20px;
+  text-shadow:0 2px 10px rgba(155,35,53,.18);
+}
+
+/* bouquet-scene: NO opacity animation — that was blocking iOS touches */
+.bouquet-scene{
+  position:relative;
+  display:inline-flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+
+svg.bq{
+  width:clamp(270px, 82vw, 390px);
+  height:auto;
+  filter:drop-shadow(0 6px 16px rgba(155,35,53,.2));
+  display:block;
+}
+
+/* LETTER BUTTON — larger tap target, no animation-delay opacity trap */
+.ltr-btn{
+  position:absolute;
+  bottom:22px;right:-12px;
+  background:linear-gradient(135deg,#fff8f0,#fef3e8);
+  border:1.5px solid var(--gold-l);
+  border-radius:12px;
+  padding:12px 16px;
+  display:flex;align-items:center;gap:7px;
+  font-family:'Cormorant Upright',serif;
+  font-size:.95rem;font-style:italic;font-weight:600;
+  color:var(--gold);
+  cursor:pointer;
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  box-shadow:0 5px 18px rgba(200,150,60,.3);
+  white-space:nowrap;
+  /* No opacity:0 + animation — was blocking touch on iOS */
+  z-index:10;
+}
+.ltr-btn .env{font-size:1.2rem;}
+
+/* ── MODAL ──
+   Key iOS fix: use -webkit-overflow-scrolling, no backdrop-filter on overlay
+*/
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(30,10,10,.6);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;visibility:hidden;
+  transition:opacity .4s ease, visibility .4s ease;
+}
+.overlay.open{opacity:1;visibility:visible;}
+
+.ltr-card{
+  position:relative;
+  background:var(--warm);
+  border-radius:24px 24px 0 0;
+  padding:48px 32px calc(32px + env(safe-area-inset-bottom,16px));
+  width:100%;max-width:500px;
+  text-align:center;
+  box-shadow:0 -8px 40px rgba(30,10,10,.2);
+  max-height:90vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transform:translateY(100%);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+.overlay.open .ltr-card{transform:translateY(0);}
+
+/* shimmer top bar */
+.ltr-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--rose-deep),var(--rose-light),var(--gold),var(--rose-light),var(--rose-deep));
+  background-size:200% 100%;
+  animation:shimmer 3s linear infinite;
+}
+@keyframes shimmer{0%{background-position:0 0}100%{background-position:200% 0}}
+
+/* drag handle */
+.drag-handle{
+  width:40px;height:4px;
+  background:rgba(155,35,53,.2);
+  border-radius:4px;
+  margin:0 auto 20px;
+}
+
+.close-btn{
+  position:absolute;top:16px;right:18px;
+  background:none;border:none;cursor:pointer;
+  font-size:1.2rem;color:#bbb;
+  padding:8px;
+  -webkit-appearance:none;
+  touch-action:manipulation;
+  z-index:1;
+}
+.close-btn:active{color:var(--rose-mid);}
+
+.ltr-icon{font-size:2.6rem;display:block;margin-bottom:4px;animation:heartbeat 1.6s ease-in-out infinite;}
+@keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.2)}28%{transform:scale(1)}42%{transform:scale(1.15)}56%{transform:scale(1)}}
+
+.ltr-divider{width:70px;height:1.5px;margin:12px auto;background:linear-gradient(to right,transparent,var(--gold),transparent);}
+
+.ltr-salutation{
+  font-family:'Pinyon Script',cursive;
+  font-size:1.8rem;color:var(--rose-deep);
+  margin-bottom:10px;line-height:1.45;
+}
+.ltr-body{
+  font-family:'Cormorant Upright',serif;
+  font-style:italic;font-size:1.08rem;
+  line-height:1.9;color:#3a1818;font-weight:300;
+}
+.ltr-sign{
+  font-family:'Pinyon Script',cursive;
+  font-size:1.55rem;color:var(--rose-mid);
+  margin-top:14px;display:block;
+}
+
+/* Tablet / desktop — center modal */
+@media(min-width:500px){
+  .overlay{align-items:center;}
+  .ltr-card{border-radius:24px;max-width:420px;width:90%;padding:48px 44px 44px;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="petal-layer" id="petals"></div>
+
+<!-- ═══ PAGE 1 ═══ -->
+<div class="page" id="page1">
+  <div class="q-card">
+    <span class="flower-icon">💐</span>
+    <h1 class="q-title">Do you want to receive<br>a <span>bouquet</span>?</h1>
+    <div class="btns">
+      <button class="btn btn-yes" onclick="goYes()">Yes ✦</button>
+      <button class="btn btn-no"  onclick="goNo()">No</button>
+    </div>
+    <p class="wrong-msg" id="wrongMsg"></p>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2 ═══ -->
+<div class="page hidden" id="page2">
+  <p class="p2-title">A little something for you, my love 🌹</p>
+
+  <div class="bouquet-scene">
+    <svg class="bq" viewBox="0 0 420 550" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="rg1" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#f4909f"/><stop offset="55%" stop-color="#c8415a"/><stop offset="100%" stop-color="#7a1228"/></radialGradient>
+        <radialGradient id="rg2" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#f8a8b4"/><stop offset="55%" stop-color="#e06080"/><stop offset="100%" stop-color="#901838"/></radialGradient>
+        <radialGradient id="rg3" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#fbbcc6"/><stop offset="55%" stop-color="#e87890"/><stop offset="100%" stop-color="#a02848"/></radialGradient>
+        <radialGradient id="rg4" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#e88090"/><stop offset="55%" stop-color="#b83050"/><stop offset="100%" stop-color="#6a1020"/></radialGradient>
+        <radialGradient id="pg1" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#fde0e8"/><stop offset="55%" stop-color="#f090a8"/><stop offset="100%" stop-color="#c85878"/></radialGradient>
+        <radialGradient id="pg2" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#feeaf2"/><stop offset="55%" stop-color="#f8b8cc"/><stop offset="100%" stop-color="#d87898"/></radialGradient>
+        <radialGradient id="lav" cx="38%" cy="32%" r="62%"><stop offset="0%" stop-color="#ece0f8"/><stop offset="55%" stop-color="#c0a0d8"/><stop offset="100%" stop-color="#806098"/></radialGradient>
+        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#52a068"/><stop offset="100%" stop-color="#2a5038"/></linearGradient>
+        <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#62b878"/><stop offset="100%" stop-color="#386848"/></linearGradient>
+        <linearGradient id="wG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fde8f0"/><stop offset="50%" stop-color="#f9d0de"/><stop offset="100%" stop-color="#f0a8bc"/></linearGradient>
+        <linearGradient id="rG" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#dd3a54"/><stop offset="50%" stop-color="#f47088"/><stop offset="100%" stop-color="#c42844"/></linearGradient>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="sglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- STEMS -->
+      <g stroke-linecap="round" fill="none">
+        <path d="M210 440 Q205 468 200 520" stroke="#2a5038" stroke-width="5"/>
+        <path d="M210 440 Q216 470 220 520" stroke="#386848" stroke-width="4.5"/>
+        <path d="M210 440 Q193 462 184 520" stroke="#2a5038" stroke-width="4"/>
+        <path d="M210 440 Q230 465 238 520" stroke="#336040" stroke-width="4"/>
+        <path d="M210 440 Q175 456 164 520" stroke="#2a5038" stroke-width="3.5"/>
+        <path d="M210 440 Q250 458 260 520" stroke="#386848" stroke-width="3.5"/>
+        <path d="M210 440 Q155 450 144 520" stroke="#2a5038" stroke-width="3"/>
+        <path d="M210 440 Q270 452 282 520" stroke="#336040" stroke-width="3"/>
+      </g>
+      <!-- LEAVES -->
+      <path d="M176 410 Q126 366 136 312 Q160 350 176 410Z" fill="url(#lg1)"/>
+      <path d="M189 398 Q148 350 160 298 Q183 338 189 398Z" fill="url(#lg2)"/>
+      <path d="M233 396 Q276 350 264 296 Q241 336 233 396Z" fill="url(#lg1)"/>
+      <path d="M246 404 Q292 360 280 304 Q257 344 246 404Z" fill="url(#lg2)"/>
+      <path d="M196 426 Q158 398 158 366 Q180 386 196 426Z" fill="#3a7250" opacity=".85"/>
+      <path d="M226 424 Q266 396 268 364 Q246 384 226 424Z" fill="#4a8860" opacity=".85"/>
+      <path d="M180 385 Q132 342 148 290 Q172 330 180 385Z" fill="#2a5038" opacity=".55"/>
+      <path d="M242 380 Q292 336 276 284 Q252 326 242 380Z" fill="#386848" opacity=".55"/>
+      <path d="M200 440 Q170 420 165 395 Q185 408 200 440Z" fill="#336040" opacity=".7"/>
+      <path d="M220 438 Q252 418 258 392 Q238 407 220 438Z" fill="#2a5038" opacity=".7"/>
+      <!-- WRAP -->
+      <path d="M144 430 Q148 408 210 402 Q272 408 276 430 L270 510 Q240 524 210 526 Q180 524 150 510 Z" fill="url(#wG)"/>
+      <path d="M158 408 Q184 400 210 398 Q236 400 262 408" stroke="rgba(255,255,255,.55)" stroke-width="1.8" fill="none"/>
+      <path d="M153 420 Q182 411 210 409 Q238 411 267 420" stroke="rgba(255,255,255,.38)" stroke-width="1.2" fill="none"/>
+      <!-- RIBBON -->
+      <path d="M165 432 Q210 422 255 432" stroke="url(#rG)" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M205 426 Q183 406 169 410 Q161 415 170 426 Q179 437 207 430Z" fill="#dd3a54" opacity=".92"/>
+      <path d="M215 426 Q237 406 251 410 Q260 415 250 426 Q241 437 213 430Z" fill="#dd3a54" opacity=".92"/>
+      <path d="M207 430 Q194 448 183 456" stroke="#c02840" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M213 430 Q226 448 238 456" stroke="#c02840" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="210" cy="428" rx="9" ry="8" fill="#f47088"/>
+      <ellipse cx="210" cy="428" rx="5" ry="4.5" fill="#e03050"/>
+      <!-- BACK ROSES -->
+      <g transform="translate(114,285)">
+        <circle r="27" fill="url(#rg4)" opacity=".9"/>
+        <path d="M0-27 Q13-20 15-8 Q6-4 0-10 Q-6-4 -15-8 Q-13-20 0-27Z" fill="#8a1830" opacity=".8"/>
+        <path d="M27 0 Q20 13 8 15 Q4 6 10 0 Q4-6 8-15 Q20-13 27 0Z" fill="#7a1028" opacity=".7"/>
+        <path d="M0 27 Q-13 20 -15 8 Q-6 4 0 10 Q6 4 15 8 Q13 20 0 27Z" fill="#8a1830" opacity=".8"/>
+        <path d="M-27 0 Q-20-13 -8-15 Q-4-6 -10 0 Q-4 6 -8 15 Q-20 13 -27 0Z" fill="#7a1028" opacity=".7"/>
+        <circle r="17" fill="url(#rg4)"/><circle r="11" fill="#a82040"/><circle r="7" fill="#c04060"/><circle r="4" fill="#dc7088"/><circle r="2" fill="#f4a8b8"/>
+      </g>
+      <g transform="translate(308,280)">
+        <circle r="25" fill="url(#rg4)" opacity=".88"/>
+        <path d="M0-25 Q12-18 14-7 Q5-4 0-9 Q-5-4 -14-7 Q-12-18 0-25Z" fill="#8a1830" opacity=".78"/>
+        <path d="M25 0 Q18 12 7 14 Q4 5 9 0 Q4-5 7-14 Q18-12 25 0Z" fill="#7a1028" opacity=".68"/>
+        <path d="M0 25 Q-12 18 -14 7 Q-5 4 0 9 Q5 4 14 7 Q12 18 0 25Z" fill="#8a1830" opacity=".78"/>
+        <path d="M-25 0 Q-18-12 -7-14 Q-4-5 -9 0 Q-4 5 -7 14 Q-18 12 -25 0Z" fill="#7a1028" opacity=".68"/>
+        <circle r="16" fill="url(#rg4)"/><circle r="10" fill="#a82040"/><circle r="7" fill="#c04060"/><circle r="4" fill="#dc7088"/><circle r="2" fill="#f4a8b8"/>
+      </g>
+      <g transform="translate(153,260)">
+        <path d="M0-32 Q15-24 17-10 Q8-5 0-12 Q-8-5 -17-10 Q-15-24 0-32Z" fill="#9b1f3a" opacity=".78"/>
+        <path d="M32 0 Q24 15 10 17 Q5 8 12 0 Q5-8 10-17 Q24-15 32 0Z" fill="#8a1830" opacity=".7"/>
+        <path d="M0 32 Q-15 24 -17 10 Q-8 5 0 12 Q8 5 17 10 Q15 24 0 32Z" fill="#9b1f3a" opacity=".78"/>
+        <path d="M-32 0 Q-24-15 -10-17 Q-5-8 -12 0 Q-5 8 -10 17 Q-24 15 -32 0Z" fill="#8a1830" opacity=".7"/>
+        <circle r="22" fill="url(#rg2)"/><circle r="15" fill="#b83060"/><circle r="10" fill="#d05078"/><circle r="6" fill="#e88098"/><circle r="3" fill="#fac0cc"/>
+      </g>
+      <g transform="translate(267,257)">
+        <path d="M0-32 Q15-24 17-10 Q8-5 0-12 Q-8-5 -17-10 Q-15-24 0-32Z" fill="#9b1f3a" opacity=".78"/>
+        <path d="M32 0 Q24 15 10 17 Q5 8 12 0 Q5-8 10-17 Q24-15 32 0Z" fill="#8a1830" opacity=".7"/>
+        <path d="M0 32 Q-15 24 -17 10 Q-8 5 0 12 Q8 5 17 10 Q15 24 0 32Z" fill="#9b1f3a" opacity=".78"/>
+        <path d="M-32 0 Q-24-15 -10-17 Q-5-8 -12 0 Q-5 8 -10 17 Q-24 15 -32 0Z" fill="#8a1830" opacity=".7"/>
+        <circle r="22" fill="url(#rg2)"/><circle r="15" fill="#b83060"/><circle r="10" fill="#d05078"/><circle r="6" fill="#e88098"/><circle r="3" fill="#fac0cc"/>
+      </g>
+      <!-- PEONIES -->
+      <g transform="translate(143,318)">
+        <ellipse rx="36" ry="23" transform="rotate(-35)" fill="url(#pg2)" opacity=".9"/>
+        <ellipse rx="36" ry="23" transform="rotate(35)" fill="url(#pg2)" opacity=".88"/>
+        <ellipse rx="36" ry="23" transform="rotate(90)" fill="url(#pg2)" opacity=".9"/>
+        <ellipse rx="36" ry="23" transform="rotate(-90)" fill="url(#pg2)" opacity=".88"/>
+        <ellipse rx="36" ry="23" transform="rotate(0)" fill="url(#pg2)" opacity=".86"/>
+        <ellipse rx="28" ry="18" transform="rotate(20)" fill="url(#pg1)"/>
+        <ellipse rx="28" ry="18" transform="rotate(-20)" fill="url(#pg1)" opacity=".9"/>
+        <ellipse rx="28" ry="18" transform="rotate(70)" fill="url(#pg1)" opacity=".88"/>
+        <circle r="20" fill="#f6bcd0"/><circle r="14" fill="#fad4e2"/><circle r="9" fill="#fde8f0"/><circle r="5" fill="white" opacity=".85"/>
+        <circle cx="0" cy="-6" r="2.2" fill="#f0a0b8"/><circle cx="5" cy="-3" r="1.8" fill="#f0a0b8"/><circle cx="-5" cy="-3" r="1.8" fill="#f0a0b8"/>
+      </g>
+      <g transform="translate(278,315)">
+        <ellipse rx="34" ry="22" transform="rotate(-35)" fill="url(#pg2)" opacity=".9"/>
+        <ellipse rx="34" ry="22" transform="rotate(35)" fill="url(#pg2)" opacity=".88"/>
+        <ellipse rx="34" ry="22" transform="rotate(90)" fill="url(#pg2)" opacity=".9"/>
+        <ellipse rx="34" ry="22" transform="rotate(-90)" fill="url(#pg2)" opacity=".88"/>
+        <ellipse rx="34" ry="22" transform="rotate(0)" fill="url(#pg2)" opacity=".86"/>
+        <ellipse rx="26" ry="17" transform="rotate(20)" fill="url(#pg1)"/>
+        <ellipse rx="26" ry="17" transform="rotate(-20)" fill="url(#pg1)" opacity=".9"/>
+        <ellipse rx="26" ry="17" transform="rotate(70)" fill="url(#pg1)" opacity=".88"/>
+        <circle r="19" fill="#f6bcd0"/><circle r="13" fill="#fad4e2"/><circle r="8" fill="#fde8f0"/><circle r="4.5" fill="white" opacity=".85"/>
+        <circle cx="0" cy="-5" r="2" fill="#f0a0b8"/><circle cx="4" cy="-2" r="1.6" fill="#f0a0b8"/><circle cx="-4" cy="-2" r="1.6" fill="#f0a0b8"/>
+      </g>
+      <!-- FRONT HERO ROSES -->
+      <g transform="translate(166,292)">
+        <path d="M0-38 Q18-28 20-12 Q9-6 0-14 Q-9-6 -20-12 Q-18-28 0-38Z" fill="#9b1f3a" opacity=".82"/>
+        <path d="M38 0 Q28 18 12 20 Q6 9 14 0 Q6-9 12-20 Q28-18 38 0Z" fill="#8a1830" opacity=".76"/>
+        <path d="M0 38 Q-18 28 -20 12 Q-9 6 0 14 Q9 6 20 12 Q18 28 0 38Z" fill="#9b1f3a" opacity=".82"/>
+        <path d="M-38 0 Q-28-18 -12-20 Q-6-9 -14 0 Q-6 9 -12 20 Q-28 18 -38 0Z" fill="#8a1830" opacity=".76"/>
+        <circle r="28" fill="url(#rg1)"/>
+        <path d="M0-28 Q13-21 15-9 Q6-5 0-11 Q-6-5 -15-9 Q-13-21 0-28Z" fill="#b02848" opacity=".88"/>
+        <path d="M28 0 Q21 13 9 15 Q5 6 11 0 Q5-6 9-15 Q21-13 28 0Z" fill="#a01f40" opacity=".82"/>
+        <path d="M0 28 Q-13 21 -15 9 Q-6 5 0 11 Q6 5 15 9 Q13 21 0 28Z" fill="#b02848" opacity=".88"/>
+        <path d="M-28 0 Q-21-13 -9-15 Q-5-6 -11 0 Q-5 6 -9 15 Q-21 13 -28 0Z" fill="#a01f40" opacity=".82"/>
+        <circle r="19" fill="url(#rg1)"/>
+        <circle r="12" fill="#c83860"/><circle r="7.5" fill="#e05878"/><circle r="4.5" fill="#f090a8"/><circle r="2.2" fill="#fdc8d8"/>
+      </g>
+      <g transform="translate(254,290)">
+        <path d="M0-38 Q18-28 20-12 Q9-6 0-14 Q-9-6 -20-12 Q-18-28 0-38Z" fill="#9b1f3a" opacity=".82"/>
+        <path d="M38 0 Q28 18 12 20 Q6 9 14 0 Q6-9 12-20 Q28-18 38 0Z" fill="#8a1830" opacity=".76"/>
+        <path d="M0 38 Q-18 28 -20 12 Q-9 6 0 14 Q9 6 20 12 Q18 28 0 38Z" fill="#9b1f3a" opacity=".82"/>
+        <path d="M-38 0 Q-28-18 -12-20 Q-6-9 -14 0 Q-6 9 -12 20 Q-28 18 -38 0Z" fill="#8a1830" opacity=".76"/>
+        <circle r="28" fill="url(#rg3)"/>
+        <path d="M0-28 Q13-21 15-9 Q6-5 0-11 Q-6-5 -15-9 Q-13-21 0-28Z" fill="#b02848" opacity=".88"/>
+        <path d="M28 0 Q21 13 9 15 Q5 6 11 0 Q5-6 9-15 Q21-13 28 0Z" fill="#a01f40" opacity=".82"/>
+        <path d="M0 28 Q-13 21 -15 9 Q-6 5 0 11 Q6 5 15 9 Q13 21 0 28Z" fill="#b02848" opacity=".88"/>
+        <path d="M-28 0 Q-21-13 -9-15 Q-5-6 -11 0 Q-5 6 -9 15 Q-21 13 -28 0Z" fill="#a01f40" opacity=".82"/>
+        <circle r="19" fill="url(#rg3)"/>
+        <circle r="12" fill="#c83860"/><circle r="7.5" fill="#e05878"/><circle r="4.5" fill="#f090a8"/><circle r="2.2" fill="#fdc8d8"/>
+      </g>
+      <!-- CENTER HERO ROSE -->
+      <g transform="translate(210,248)" filter="url(#sglow)">
+        <path d="M0-48 Q24-35 26-16 Q11-9 0-18 Q-11-9 -26-16 Q-24-35 0-48Z" fill="#8a1830" opacity=".84"/>
+        <path d="M48 0 Q35 24 16 26 Q9 11 18 0 Q9-11 16-26 Q35-24 48 0Z" fill="#7a1028" opacity=".78"/>
+        <path d="M0 48 Q-24 35 -26 16 Q-11 9 0 18 Q11 9 26 16 Q24 35 0 48Z" fill="#8a1830" opacity=".84"/>
+        <path d="M-48 0 Q-35-24 -16-26 Q-9-11 -18 0 Q-9 11 -16 26 Q-35 24 -48 0Z" fill="#7a1028" opacity=".78"/>
+        <path d="M34-34 Q32-16 20-9 Q11-15 15-28 Q22-40 34-34Z" fill="#8a1830" opacity=".7"/>
+        <path d="M34 34 Q16 32 9 20 Q15 11 28 15 Q40 22 34 34Z" fill="#8a1830" opacity=".7"/>
+        <path d="M-34 34 Q-32 16 -20 9 Q-11 15 -15 28 Q-22 40 -34 34Z" fill="#8a1830" opacity=".7"/>
+        <path d="M-34-34 Q-16-32 -9-20 Q-15-11 -28-15 Q-40-22 -34-34Z" fill="#8a1830" opacity=".7"/>
+        <circle r="35" fill="url(#rg1)"/>
+        <path d="M0-35 Q17-26 19-11 Q8-6 0-13 Q-8-6 -19-11 Q-17-26 0-35Z" fill="#aa2040" opacity=".88"/>
+        <path d="M35 0 Q26 17 11 19 Q6 8 13 0 Q6-8 11-19 Q26-17 35 0Z" fill="#9a1838" opacity=".82"/>
+        <path d="M0 35 Q-17 26 -19 11 Q-8 6 0 13 Q8 6 19 11 Q17 26 0 35Z" fill="#aa2040" opacity=".88"/>
+        <path d="M-35 0 Q-26-17 -11-19 Q-6-8 -13 0 Q-6 8 -11 19 Q-26 17 -35 0Z" fill="#9a1838" opacity=".82"/>
+        <circle r="24" fill="url(#rg1)"/>
+        <circle r="16" fill="#d04868"/>
+        <circle r="10" fill="#e06080"/><circle r="6.5" fill="#f090a8"/><circle r="4" fill="#f8c0d0"/><circle r="2" fill="white" opacity=".7"/>
+      </g>
+      <!-- LAVENDER SPRIGS -->
+      <g transform="translate(104,248)">
+        <line x1="0" y1="35" x2="0" y2="-48" stroke="#604870" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <ellipse cx="0" cy="14" rx="6" ry="4.2" fill="url(#lav)" transform="rotate(-18)"/>
+        <ellipse cx="0" cy="2" rx="5.5" ry="4" fill="url(#lav)" transform="rotate(12)"/>
+        <ellipse cx="0" cy="-9" rx="5" ry="3.8" fill="#c8a8e0" transform="rotate(-10)"/>
+        <ellipse cx="0" cy="-20" rx="4.5" ry="3.4" fill="#bea0d8" transform="rotate(14)"/>
+        <ellipse cx="0" cy="-30" rx="4" ry="3" fill="#b090c8" transform="rotate(-8)"/>
+        <ellipse cx="-8" cy="8" rx="4.5" ry="3" fill="#d0b0e8" transform="rotate(-28)"/>
+        <ellipse cx="8" cy="5" rx="4.5" ry="3" fill="#c8a8e0" transform="rotate(22)"/>
+        <ellipse cx="-7" cy="-4" rx="4" ry="2.8" fill="#c0a0d8" transform="rotate(-22)"/>
+        <ellipse cx="7" cy="-7" rx="4" ry="2.8" fill="#b898cc" transform="rotate(18)"/>
+        <ellipse cx="-6" cy="-18" rx="3.5" ry="2.5" fill="#b090c8" transform="rotate(-16)"/>
+        <ellipse cx="6" cy="-22" rx="3.5" ry="2.5" fill="#a888c0" transform="rotate(14)"/>
+        <ellipse cx="-5" cy="-32" rx="3" ry="2.2" fill="#a080b8" transform="rotate(-10)"/>
+      </g>
+      <g transform="translate(318,245)">
+        <line x1="0" y1="35" x2="0" y2="-48" stroke="#604870" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <ellipse cx="0" cy="14" rx="6" ry="4.2" fill="url(#lav)" transform="rotate(18)"/>
+        <ellipse cx="0" cy="2" rx="5.5" ry="4" fill="url(#lav)" transform="rotate(-12)"/>
+        <ellipse cx="0" cy="-9" rx="5" ry="3.8" fill="#c8a8e0" transform="rotate(10)"/>
+        <ellipse cx="0" cy="-20" rx="4.5" ry="3.4" fill="#bea0d8" transform="rotate(-14)"/>
+        <ellipse cx="0" cy="-30" rx="4" ry="3" fill="#b090c8" transform="rotate(8)"/>
+        <ellipse cx="8" cy="8" rx="4.5" ry="3" fill="#d0b0e8" transform="rotate(28)"/>
+        <ellipse cx="-8" cy="5" rx="4.5" ry="3" fill="#c8a8e0" transform="rotate(-22)"/>
+        <ellipse cx="7" cy="-4" rx="4" ry="2.8" fill="#c0a0d8" transform="rotate(22)"/>
+        <ellipse cx="-7" cy="-7" rx="4" ry="2.8" fill="#b898cc" transform="rotate(-18)"/>
+        <ellipse cx="6" cy="-18" rx="3.5" ry="2.5" fill="#b090c8" transform="rotate(16)"/>
+        <ellipse cx="-6" cy="-22" rx="3.5" ry="2.5" fill="#a888c0" transform="rotate(-14)"/>
+        <ellipse cx="5" cy="-32" rx="3" ry="2.2" fill="#a080b8" transform="rotate(10)"/>
+      </g>
+      <!-- BABY'S BREATH -->
+      <g opacity=".92" filter="url(#glow)">
+        <circle cx="128" cy="224" r="4.8" fill="white"/><circle cx="136" cy="215" r="3.8" fill="white" opacity=".85"/><circle cx="122" cy="213" r="3.2" fill="#fce8f0"/>
+        <circle cx="145" cy="204" r="4.2" fill="white"/><circle cx="153" cy="195" r="3.5" fill="white" opacity=".8"/><circle cx="140" cy="199" r="3" fill="#fce8f0"/>
+        <circle cx="170" cy="192" r="4.5" fill="white"/><circle cx="178" cy="183" r="3.8" fill="white" opacity=".85"/>
+        <circle cx="163" cy="180" r="3.2" fill="white"/><circle cx="170" cy="173" r="2.8" fill="#fce8f0"/>
+        <circle cx="210" cy="178" r="4.8" fill="white"/><circle cx="200" cy="170" r="3.8" fill="white" opacity=".8"/>
+        <circle cx="218" cy="169" r="3.2" fill="white"/><circle cx="208" cy="162" r="2.8" fill="#fce8f0"/>
+        <circle cx="250" cy="182" r="4.2" fill="white"/><circle cx="258" cy="174" r="3.5" fill="white" opacity=".85"/>
+        <circle cx="242" cy="176" r="3" fill="white"/><circle cx="260" cy="166" r="2.8" fill="#fce8f0"/>
+        <circle cx="282" cy="200" r="4.2" fill="white"/><circle cx="290" cy="191" r="3.2" fill="white" opacity=".8"/>
+        <circle cx="298" cy="220" r="4.5" fill="white"/><circle cx="306" cy="211" r="3.8" fill="white" opacity=".85"/>
+        <circle cx="188" cy="184" r="3.8" fill="white" opacity=".9"/>
+        <circle cx="230" cy="186" r="3.8" fill="white" opacity=".9"/>
+      </g>
+      <!-- ACCENT BLOOMS -->
+      <g transform="translate(126,308)"><circle r="14" fill="#ffd0dc"/><circle r="10" fill="#ffe4ec"/><circle r="6.5" fill="white" opacity=".9"/></g>
+      <g transform="translate(295,305)"><circle r="13" fill="#ffccd8"/><circle r="9" fill="#fce4ec"/><circle r="6" fill="white" opacity=".88"/></g>
+      <g transform="translate(210,200)"><circle r="11" fill="#ffd4e0" opacity=".92"/><circle r="7.5" fill="#fce8f0"/><circle r="4.5" fill="white" opacity=".88"/></g>
+      <!-- SPARKLES -->
+      <text x="90" y="202" font-size="18" fill="#f9c6d3" opacity=".68">✦</text>
+      <text x="328" y="196" font-size="16" fill="#f9c6d3" opacity=".62">✦</text>
+      <text x="198" y="148" font-size="14" fill="#e8c0d0" opacity=".58">✦</text>
+      <text x="152" y="158" font-size="11" fill="#d8b8c8" opacity=".5">✦</text>
+      <text x="256" y="153" font-size="13" fill="#e8c0d0" opacity=".55">✦</text>
+    </svg>
+
+    <!-- LETTER BUTTON -->
+    <button class="ltr-btn" id="ltrBtn">
+      <span class="env">✉</span> click here
+    </button>
+  </div>
+</div>
+
+<!-- LOVE LETTER MODAL -->
+<div class="overlay" id="overlay">
+  <div class="ltr-card" id="ltrCard">
+    <div class="drag-handle"></div>
+    <button class="close-btn" id="closeBtn">✕</button>
+    <span class="ltr-icon">💗</span>
+    <div class="ltr-divider"></div>
+    <p class="ltr-salutation">Hello, My Love,<br>My World, My Forever.</p>
+    <div class="ltr-divider"></div>
+    <p class="ltr-body">
+      I love you with all my heart.<br><br>
+      I'm so lucky to be with you and will
+      forever cherish the memories that we
+      have and will create.<br><br>
+      I love you the mosttt,<br>
+      my loveee.
+    </p>
+    <span class="ltr-sign">Forever &hearts;</span>
+    <div class="ltr-divider"></div>
+  </div>
+</div>
+
+<script>
+// Petals
+const pc=['#f4b8c5','#f9d0da','#fce4ec','#e8a0b4','#fddde6','#f0c0d0'];
+const pl=document.getElementById('petals');
+for(let i=0;i<28;i++){
+  const d=document.createElement('div');d.className='fp';
+  const s=7+Math.random()*12;
+  Object.assign(d.style,{
+    left:Math.random()*100+'vw',top:'-20px',
+    width:s+'px',height:s*1.45+'px',
+    background:pc[~~(Math.random()*pc.length)],
+    animationDuration:(9+Math.random()*10)+'s',
+    animationDelay:(Math.random()*14)+'s',
+    transform:'rotate('+Math.random()*360+'deg)'
+  });
+  pl.appendChild(d);
+}
+
+// No button
+let nc=0;
+const nl=[
+  '💕 That\'s the wrong answer, love!',
+  '🌹 Try again — the only answer is Yes!',
+  '😄 Come on, you know the right answer…',
+  '💐 Yes is the only option, darling!'
+];
+function goNo(){
+  nc++;
+  const m=document.getElementById('wrongMsg');
+  m.textContent=nl[Math.min(nc-1,nl.length-1)];
+  m.classList.remove('show');
+  void m.offsetWidth;
+  m.classList.add('show');
+}
+
+// Yes button — use visibility toggle (iOS-safe)
+function goYes(){
+  const p1=document.getElementById('page1');
+  const p2=document.getElementById('page2');
+  p1.classList.add('hidden');
+  // Small delay so transition plays before page2 appears
+  setTimeout(function(){p2.classList.remove('hidden');},50);
+}
+
+// Modal — use addEventListener instead of onclick for iOS reliability
+document.getElementById('ltrBtn').addEventListener('click',function(){
+  document.getElementById('overlay').classList.add('open');
+});
+document.getElementById('closeBtn').addEventListener('click',function(){
+  document.getElementById('overlay').classList.remove('open');
+});
+// Tap overlay background to close
+document.getElementById('overlay').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+// Prevent card tap from closing
+document.getElementById('ltrCard').addEventListener('click',function(e){
+  e.stopPropagation();
+});
+</script>
+</body>
+</html>
